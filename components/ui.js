@@ -1,14 +1,15 @@
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 export const colors = {
-  primary: "#9b1c31", // pomegranate
+  primary: "#2e7d32", // green
+  primaryDark: "#1b5e20", // darker green for pressed / hover
   text: "#1f1f1f",
   muted: "#6b6b6b",
   border: "#d6d6d6",
   bg: "#f7f5f2",
   card: "#ffffff",
   error: "#c62828",
-  success: "#2e7d32",
+  success: "#1b5e20",
 };
 
 // Page body. _document.js disables body scrolling, so every page scrolls here.
@@ -48,7 +49,13 @@ export function Button({ title, onPress, variant = "primary", disabled, style })
       accessibilityRole="button"
       onPress={onPress}
       disabled={disabled}
-      style={({ pressed }) => [styles.btn, v, (pressed || disabled) && { opacity: 0.6 }, style]}
+      style={({ pressed, hovered }) => [
+        styles.btn,
+        v,
+        (pressed || hovered) && (variant === "primary" ? styles.btnPrimaryActive : styles.btnSecondaryActive),
+        disabled && { opacity: 0.6 },
+        style,
+      ]}
     >
       <Text style={t}>{title}</Text>
     </Pressable>
@@ -92,8 +99,10 @@ export const styles = StyleSheet.create({
   input: { borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, backgroundColor: "#fff", color: colors.text },
   btn: { paddingVertical: 11, paddingHorizontal: 16, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   btnPrimary: { backgroundColor: colors.primary },
+  btnPrimaryActive: { backgroundColor: colors.primaryDark },
   btnPrimaryText: { color: "#fff", fontWeight: "600", fontSize: 15 },
   btnSecondary: { backgroundColor: "#fff", borderWidth: 1, borderColor: colors.border },
+  btnSecondaryActive: { backgroundColor: "#e8f5e9", borderColor: colors.primary },
   btnSecondaryText: { color: colors.text, fontWeight: "600", fontSize: 15 },
   choiceRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: { borderWidth: 1, borderColor: colors.border, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12, backgroundColor: "#fff" },

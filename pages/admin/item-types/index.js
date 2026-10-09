@@ -77,7 +77,7 @@ function ItemTypeList() {
               <View style={{ marginTop: 8, padding: 10, borderRadius: 8, backgroundColor: "#fdecea" }}>
                 <Text style={{ color: colors.error, marginBottom: 8 }}>
                   {itemCount > 0
-                    ? `${itemCount} item${itemCount === 1 ? " is" : "s are"} registered as ${t.name}, so it can't be deleted.`
+                    ? `${itemCount} item${itemCount === 1 ? " is" : "s are"} registered as ${t.name}, so it can't be deleted. Delete those first under View registered.`
                     : `Delete ${t.name} and its ${fields.length} field${fields.length === 1 ? "" : "s"}? This can't be undone.`}
                 </Text>
                 <View style={{ flexDirection: "row", gap: 8 }}>
@@ -105,9 +105,12 @@ function ItemTypeList() {
                 </Text>
               ))}
             </View>
-            {itemCount > 0 && (
-              <Text style={[styles.muted, { marginTop: 6 }]}>{itemCount} registered</Text>
-            )}
+            <Button
+              title={`View registered (${itemCount})`}
+              variant="secondary"
+              onPress={() => router.push(`/admin/item-types/${t.id}`)}
+              style={{ marginTop: 12, alignSelf: "flex-start" }}
+            />
           </Card>
         );
       })}

@@ -13,10 +13,13 @@ import { Button, Choice, ErrorText, Input, Label, colors } from "./ui";
  *   companyId   – stamped into company_id
  *   onSubmit    – async (payload) => void. This component never writes to the
  *                 database itself, so the caller decides: insert now, or queue offline.
+ *   item        – optional existing item to edit; the form starts with its values
+ *                 and the payload keeps its id, created_by and created_at.
+ *   onCancel    – optional; shows a Cancel button.
  *
  * payload = { id, company_id, item_type_id, data: {fieldKey: value}, created_by, created_at }
  */
-export default function DynamicForm({ itemTypeId, userId, companyId, onSubmit, submitLabel = "Submit" }) {
+export default function DynamicForm({ itemTypeId, userId, companyId, onSubmit, item, onCancel, submitLabel = "Submit" }) {
   const [definitions, setDefinitions] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [values, setValues] = useState({});
@@ -26,7 +29,7 @@ export default function DynamicForm({ itemTypeId, userId, companyId, onSubmit, s
 
   useEffect(() => {
     setDefinitions(null);
-    setValues({});
+    setValues(initialValues(item));
     setErrors({});
     supabase
       .from("field_definitions")
@@ -37,7 +40,7 @@ export default function DynamicForm({ itemTypeId, userId, companyId, onSubmit, s
         if (error) setLoadError(error.message);
         else setDefinitions(data);
       });
-  }, [itemTypeId]);
+  }, [itemTypeId, item]);
 
   const setValue = (key, v) => setValues((vs) => ({ ...vs, [key]: v }));
 
@@ -47,18 +50,20 @@ export default function DynamicForm({ itemTypeId, userId, companyId, onSubmit, s
     setErrors(errs);
     if (Object.keys(errs).length) return;
 
-    const payload = {
-      id: crypto.randomUUID(),
-      company_id: companyId,
-      item_type_id: itemTypeId,
-      data,
-      created_by: userId,
-      created_at: new Date().toISOString(),
-    };
+    const payload = item
+      ? { ...item, data }
+      : {
+          id: crypto.randomUUID(),
+          company_id: companyId,
+          item_type_id: itemTypeId,
+          data,
+          created_by: userId,
+          created_at: new Date().toISOString(),
+        };
     setSubmitting(true);
     try {
       await onSubmit(payload);
-      setValues({});
+      if (!item) setValues({});
     } catch (e) {
       setSubmitError(e.message || "Couldn't submit.");
     } finally {
@@ -83,14 +88,25 @@ export default function DynamicForm({ itemTypeId, userId, companyId, onSubmit, s
         </View>
       ))}
       <ErrorText>{submitError}</ErrorText>
-      <Button
-        title={submitting ? "Submitting…" : submitLabel}
-        onPress={handleSubmit}
-        disabled={submitting}
-        style={{ marginTop: 16 }}
-      />
+      <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
+        {onCancel && (
+          <Button title="Cancel" variant="secondary" onPress={onCancel} disabled={submitting} style={{ flex: 1 }} />
+        )}
+        <Button
+          title={submitting ? "Saving…" : submitLabel}
+          onPress={handleSubmit}
+          disabled={submitting}
+          style={{ flex: 1 }}
+        />
+      </View>
     </View>
   );
+}
+
+// Stored values are typed (numbers etc.); inputs work with strings.
+function initialValues(item) {
+  if (!item) return {};
+  return Object.fromEntries(Object.entries(item.data || {}).map(([k, v]) => [k, String(v)]));
 }
 
 function FieldInput({ def, value, onChange }) {
