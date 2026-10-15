@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { ActivityIndicator, Text, View } from "react-native";
-import DynamicForm from "../../../components/DynamicForm";
-import RequireRole from "../../../components/RequireRole";
-import { Button, Card, ErrorText, Screen, colors, styles } from "../../../components/ui";
-import { supabase } from "../../../lib/supabase";
+import DynamicForm from "../../../../components/DynamicForm";
+import RequireRole from "../../../../components/RequireRole";
+import { Button, Card, ErrorText, Screen, colors, styles } from "../../../../components/ui";
+import { supabase } from "../../../../lib/supabase";
 
 function formatDate(iso) {
   return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });

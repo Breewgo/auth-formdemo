@@ -70,7 +70,10 @@ function ItemTypeList() {
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
               <Text style={{ fontSize: 17, fontWeight: "600", flexShrink: 1 }}>{t.name}</Text>
               {!confirming && (
-                <Button title="Delete" variant="secondary" onPress={() => setConfirmingId(t.id)} />
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  <Button title="Edit" variant="secondary" onPress={() => router.push(`/admin/item-types/${t.id}/edit`)} />
+                  <Button title="Delete" variant="secondary" onPress={() => setConfirmingId(t.id)} />
+                </View>
               )}
             </View>
             {confirming && (

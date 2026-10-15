@@ -14,8 +14,9 @@ Same stack as the team demo (github.com/Optivat/nextjstest).
 3. Authentication → Users → **Add user** (tick *Auto Confirm User*):
    `admin@test.com` and `employee@test.com`, with any password.
 4. SQL Editor → run `supabase/seed.sql`. This adds the company, profiles, and the sample types Field, Bin, Truck and Juice Batch.
-5. Copy `.env.example` to `.env.local` and fill in the values from Project Settings → API.
-6. Install and run:
+5. *(Optional)* SQL Editor → run `supabase/langers_seed.sql` to load the Langer's Farm item types (see below).
+6. Copy `.env.example` to `.env.local` and fill in the values from Project Settings → API.
+7. Install and run:
    ```bash
    npm install
    npm start
@@ -28,9 +29,30 @@ Same stack as the team demo (github.com/Optivat/nextjstest).
 |---|---|---|
 | `/login` | everyone | Email/password login, then redirects by role |
 | `/admin` | admin | Management home |
-| `/admin/item-types` | admin | List of item types and their fields |
-| `/admin/item-types/new` | admin | Form builder |
+| `/admin/item-types` | admin | List of item types: edit, delete, view registered |
+| `/admin/item-types/new` | admin | Form builder: create a type |
+| `/admin/item-types/[id]/edit` | admin | Form builder: edit a type (rename, change fields, reorder, remove) |
+| `/admin/item-types/[id]` | admin | Items registered under a type: view, edit, delete |
 | `/form-demo` | any signed-in user | Pick an item type, fill in its generated form, save to `items` |
+
+## Langer's Farm item types
+
+`supabase/langers_seed.sql` loads this set. It's a placeholder based on a typical orchard-to-juice flow; adjust it to the mentor info.
+You can also build any of these live in the form builder.
+
+| Type | Contains | Fields (* required, P = public) |
+|---|---|---|
+| Orchard Block | Harvest Bin | Ranch Name*P, Block ID*, Variety* P (dropdown), Region P, Acres |
+| Harvest Bin | | Harvest Date*P, Gross Weight (lbs)*, Bin Grade* (dropdown), Picking Crew |
+| Truck Load | Harvest Bin | Load Number*, Departure Date*P, Destination*P (dropdown), License Plate*, Carrier |
+| Receiving Lot | Truck Load | Received Date*P, Net Weight (lbs)*, Inspection Result* (dropdown), Brix, Inspector |
+| Production Batch | Receiving Lot | Batch Number*P, Production Date*P, Process*P (dropdown), Volume (gal)*, Pasteurization Temp (°F) |
+| Bottle Lot | Production Batch | Lot Code*P, Bottling Date*P, Best By Date*P, Bottle Size*P (dropdown), Units Bottled |
+
+### Editing a type
+- A field's **key** is fixed once it's created, so relabeling a field doesn't disconnect items already saved under it.
+- Removing a field deletes its definition only; values already saved on items are kept and still shown under *View registered*.
+- The "Contains" choices hide any type that would create a loop (e.g. Harvest Bin can't contain Bottle Lot).
 
 ## Using `DynamicForm`
 
