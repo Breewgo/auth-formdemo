@@ -42,7 +42,7 @@ You can also build any of these live in the form builder.
 
 | Type | Contains | Fields (* required, P = public) |
 |---|---|---|
-| Orchard Block | Harvest Bin | Ranch Name*P, Block ID*, Variety* P (dropdown), Region P, Acres |
+| Orchard Block | Harvest Bin | Ranch Name*P, Block ID*, Variety*P (dropdown), Region P, Acres |
 | Harvest Bin | | Harvest Date*P, Gross Weight (lbs)*, Bin Grade* (dropdown), Picking Crew |
 | Truck Load | Harvest Bin | Load Number*, Departure Date*P, Destination*P (dropdown), License Plate*, Carrier |
 | Receiving Lot | Truck Load | Received Date*P, Net Weight (lbs)*, Inspection Result* (dropdown), Brix, Inspector |
