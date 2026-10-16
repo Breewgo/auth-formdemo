@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { ActivityIndicator, Text, View } from "react-native";
 import DynamicForm from "../../../../components/DynamicForm";
+import ItemQR from "../../../../components/ItemQR";
 import RequireRole from "../../../../components/RequireRole";
 import { Button, Card, ErrorText, Screen, colors, styles } from "../../../../components/ui";
 import { supabase } from "../../../../lib/supabase";
@@ -82,7 +83,14 @@ function RegisteredItems({ typeId }) {
   return (
     <Screen
       title={type ? `Registered: ${type.name}` : "Registered items"}
-      right={<Button title="Back" variant="secondary" onPress={() => router.push("/admin/item-types")} />}
+      right={
+        <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <Button title="Back" variant="secondary" onPress={() => router.push("/admin/item-types")} />
+          {items?.length > 0 && (
+            <Button title="Print all QR codes" onPress={() => router.push(`/admin/item-types/${typeId}/qr`)} />
+          )}
+        </View>
+      }
     >
       <ErrorText>{error}</ErrorText>
       {!items && !error && <ActivityIndicator />}
@@ -109,6 +117,11 @@ function RegisteredItems({ typeId }) {
               </View>
               {!editing && !confirming && (
                 <View style={{ flexDirection: "row", gap: 8 }}>
+                  <Button
+                    title="Print QR"
+                    variant="secondary"
+                    onPress={() => router.push(`/admin/item-types/${typeId}/qr?item=${item.id}`)}
+                  />
                   <Button title="Edit" variant="secondary" onPress={() => setEditingId(item.id)} />
                   <Button title="Delete" variant="secondary" onPress={() => setConfirmingId(item.id)} />
                 </View>
@@ -124,13 +137,16 @@ function RegisteredItems({ typeId }) {
                 submitLabel="Save changes"
               />
             ) : (
-              <View style={{ marginTop: 8 }}>
-                {rows(item).map(([label, value]) => (
-                  <Text key={label} style={{ fontSize: 14, marginTop: 2 }}>
-                    <Text style={styles.muted}>{label}: </Text>
-                    {value === undefined || value === "" ? "—" : String(value)}
-                  </Text>
-                ))}
+              <View style={{ marginTop: 8, flexDirection: "row", flexWrap: "wrap", gap: 16, justifyContent: "space-between" }}>
+                <View style={{ flexShrink: 1, minWidth: 180 }}>
+                  {rows(item).map(([label, value]) => (
+                    <Text key={label} style={{ fontSize: 14, marginTop: 2 }}>
+                      <Text style={styles.muted}>{label}: </Text>
+                      {value === undefined || value === "" ? "—" : String(value)}
+                    </Text>
+                  ))}
+                </View>
+                <ItemQR itemId={item.id} size={110} />
               </View>
             )}
 
