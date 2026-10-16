@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { validateValues } from "../lib/fields";
 import { supabase } from "../lib/supabase";
-import { Button, Choice, ErrorText, Input, Label, colors } from "./ui";
+import { Button, Choice, DateInput, ErrorText, Input, Label, colors, todayString } from "./ui";
 
 /**
  * Builds a form from an item type's field_definitions.
@@ -116,8 +116,10 @@ function FieldInput({ def, value, onChange }) {
     case "date":
       return (
         <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
-          <Input value={value} onChangeText={onChange} placeholder="YYYY-MM-DD" style={{ flex: 1 }} />
-          <Button title="Today" variant="secondary" onPress={() => onChange(new Date().toISOString().slice(0, 10))} />
+          <View style={{ flex: 1 }}>
+            <DateInput value={value} onChange={onChange} />
+          </View>
+          <Button title="Today" variant="secondary" onPress={() => onChange(todayString())} />
         </View>
       );
     case "select":

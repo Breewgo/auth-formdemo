@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import React from "react";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 export const colors = {
   primary: "#2e7d32", // green
@@ -39,6 +40,35 @@ export function Label({ children }) {
 
 export function Input({ style, ...props }) {
   return <TextInput placeholderTextColor={colors.muted} style={[styles.input, style]} {...props} />;
+}
+
+// Today's date as YYYY-MM-DD in the user's own time zone.
+export function todayString() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// Calendar date picker. On the web this is the browser's built-in date input
+// (value is always YYYY-MM-DD); on native it falls back to a text box.
+export function DateInput({ value, onChange, style }) {
+  if (Platform.OS !== "web") {
+    return <Input value={value} onChangeText={onChange} placeholder="YYYY-MM-DD" style={style} />;
+  }
+  return React.createElement("input", {
+    type: "date",
+    value: value || "",
+    onChange: (e) => onChange(e.target.value),
+    style: {
+      ...StyleSheet.flatten([styles.input, style]),
+      // Plain DOM element: spell out what react-native-web would normally fill in.
+      borderStyle: "solid",
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+      boxSizing: "border-box",
+      minHeight: 44,
+      width: "100%",
+    },
+  });
 }
 
 export function Button({ title, onPress, variant = "primary", disabled, style }) {
