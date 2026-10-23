@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { validateValues } from "../lib/fields";
+import { cachedQuery } from "../lib/offlineDb";
 import { supabase } from "../lib/supabase";
 import { Button, Choice, DateInput, ErrorText, Input, Label, colors, todayString } from "./ui";
 
@@ -12,7 +13,8 @@ import { Button, Choice, DateInput, ErrorText, Input, Label, colors, todayString
  *   userId      – stamped into created_by
  *   companyId   – stamped into company_id
  *   onSubmit    – async (payload) => void. This component never writes to the
- *                 database itself, so the caller decides: insert now, or queue offline.
+ *                 database itself, so the caller decides: insert now, or queue offline
+ *                 (lib/offlineDb.js saveItem does both).
  *   item        – optional existing item to edit; the form starts with its values
  *                 and the payload keeps its id, created_by and created_at.
  *   onCancel    – optional; shows a Cancel button.
@@ -31,15 +33,18 @@ export default function DynamicForm({ itemTypeId, userId, companyId, onSubmit, i
     setDefinitions(null);
     setValues(initialValues(item));
     setErrors({});
-    supabase
-      .from("field_definitions")
-      .select("key, label, field_type, options, required, is_public")
-      .eq("item_type_id", itemTypeId)
-      .order("sort_order")
-      .then(({ data, error }) => {
-        if (error) setLoadError(error.message);
-        else setDefinitions(data);
-      });
+    setLoadError("");
+    // Falls back to the copy saved in IndexedDB, so the form still renders offline.
+    cachedQuery(`fields:${itemTypeId}`, () =>
+      supabase
+        .from("field_definitions")
+        .select("key, label, field_type, options, required, is_public")
+        .eq("item_type_id", itemTypeId)
+        .order("sort_order")
+    ).then(({ data, error }) => {
+      if (error) setLoadError(error.message || "Couldn't load this form.");
+      else setDefinitions(data);
+    });
   }, [itemTypeId, item]);
 
   const setValue = (key, v) => setValues((vs) => ({ ...vs, [key]: v }));

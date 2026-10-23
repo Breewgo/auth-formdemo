@@ -32,6 +32,13 @@ export default function AdminHome() {
             <Button title="Manage item types" onPress={() => router.push("/admin/item-types")} />
           </Card>
           <Card>
+            <Text style={{ fontSize: 17, fontWeight: "600", marginBottom: 4 }}>Scan a QR code</Text>
+            <Text style={[styles.muted, { marginBottom: 12 }]}>
+              Point the camera at an item's QR label to see what it is and its details.
+            </Text>
+            <Button title="Open scanner" onPress={() => router.push("/scan")} />
+          </Card>
+          <Card>
             <Text style={{ fontSize: 17, fontWeight: "600", marginBottom: 4 }}>Preview forms</Text>
             <Text style={[styles.muted, { marginBottom: 12 }]}>
               See the form an employee gets for each item type.

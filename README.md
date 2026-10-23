@@ -1,11 +1,22 @@
-# Traceability App: Auth + Form Builder
+# Traceability App
 
-Next.js 14 (pages router) + Expo / react-native-web + Supabase.
-Same stack as the team demo (github.com/Optivat/nextjstest).
+Next.js 14 (pages router) + Expo / react-native-web + Supabase, installable as a PWA and works offline.
+This repo combines the team's demos into one app:
+
+| Piece | Where it came from | Where it lives now |
+|---|---|---|
+| Login, roles, form builder, generated forms | this repo (`main`) | `pages/login.js`, `pages/admin/…`, `components/DynamicForm.js` |
+| QR code generation + printable sheet | this repo's `qr-generator` branch (based on Raul's qr-generator-demo) | `components/ItemQR.js`, `pages/admin/item-types/[id]/qr.js` |
+| QR scanner (expo-camera) | [Optivat/nextjstest](https://github.com/Optivat/nextjstest) `main` | `components/QRScanner.js`, `pages/scan.js` |
+| PWA manifest, icons, iPhone (Capacitor) build | [Optivat/nextjstest](https://github.com/Optivat/nextjstest) `pwa-branch` | `public/`, `capacitor.config.ts`, `scripts/package-ios.sh`, `.github/workflows/ios-ipa.yml` |
+| Offline storage (IndexedDB) | new; `offlineDBaddition` in the team repo had no code pushed yet | `lib/offlineDb.js`, `components/OfflineStatus.js` |
 
 - **Login & roles:** one login screen; admins go to `/admin`, employees to `/form-demo`.
 - **Form builder** (`/admin/item-types/new`): admins define item types and their fields.
 - **Generated forms** (`components/DynamicForm.js`): builds the form for any item type from its field definitions.
+- **QR codes:** every registered item gets one (it holds the item's id); admins print sheets of them.
+- **Scanning** (`/scan`): point the camera at a QR label to see the item and its details.
+- **Offline:** forms, item types and saved items work with no signal and upload when it's back.
 
 ## Setup
 
@@ -33,7 +44,9 @@ Same stack as the team demo (github.com/Optivat/nextjstest).
 | `/admin/item-types/new` | admin | Form builder: create a type |
 | `/admin/item-types/[id]/edit` | admin | Form builder: edit a type (rename, change fields, reorder, remove) |
 | `/admin/item-types/[id]` | admin | Items registered under a type: view, edit, delete |
-| `/form-demo` | any signed-in user | Pick an item type, fill in its generated form, save to `items` |
+| `/admin/item-types/[id]/qr` | admin | Printable QR sheet (all items, or one with `?item=<id>`) |
+| `/form-demo` | any signed-in user | Pick an item type, fill in its generated form, save to `items` (queued offline) |
+| `/scan` | any signed-in user | Scan an item's QR code (or type its id) and see its details |
 
 ## Langer's Farm item types
 
@@ -64,7 +77,7 @@ You can also build any of these live in the form builder.
   onSubmit={async (payload) => {
     // payload = { id, company_id, item_type_id, data, created_by, created_at }
     // id is a UUID made on the device, so inserting it twice can't create duplicates.
-    await supabase.from("items").insert(payload); // or put it in an offline queue
+    await saveItem(payload); // lib/offlineDb.js: inserts now, or queues in IndexedDB when offline
   }}
 />
 ```
@@ -77,3 +90,20 @@ You can also build any of these live in the form builder.
 ## Offline login
 The Supabase session is saved in localStorage, and the profile (role and company) is cached too.
 After one online login, reopening the app with no signal still signs you in.
+
+## Offline (IndexedDB)
+`lib/offlineDb.js` keeps two IndexedDB stores:
+- **cache:** the item type list, each type's field definitions, and items you've scanned. Every Supabase read for these saves a copy, and offline reads use the copy, so a form works offline once it has been opened online.
+- **outbox:** items registered with no signal. They upload automatically when the device comes back online (or with *Upload now*). Each item's id is made on the device, so a retried upload can't create a duplicate. If the server rejects an item (e.g. permissions), it stays in the outbox and the reason is shown.
+
+Scanning an item that's still in the outbox shows it as *not uploaded yet*.
+
+## Install as an app (PWA)
+`public/manifest.webmanifest` and the icons make the site installable ("Add to Home Screen"). `public/sw.js` is a service worker that saves the app's pages and build files so it opens with no signal.
+- It only runs in a production build: `npm run build && npx next start`. In `npm start` (dev) it's off.
+- Browsers allow service workers, and phone cameras, only over **https** (or `localhost` on the same machine). To test on a phone, deploy (e.g. Vercel) or use an https tunnel.
+- After changing `sw.js`, bump its `VERSION` so phones drop the old cache.
+
+## iPhone app (Capacitor)
+From the team's `pwa-branch`. `BUILD_IOS=1 npm run build` exports a static site to `out/`, which Capacitor wraps as an iOS app.
+The **Build unsigned iPhone IPA** workflow (Actions tab → Run workflow) builds an unsigned `.ipa` to sideload with Sideloadly. It needs repository secrets `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`, since the static build bakes them in.

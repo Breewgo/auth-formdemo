@@ -1,0 +1,71 @@
+name: Build unsigned iPhone IPA
+
+# Run it by hand from the Actions tab (it uses macOS minutes, so not on every push).
+# Needs repository secrets NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY,
+# because the static build bakes them into the app.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      CI: '1'
+      BUILD_IOS: '1'
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+    steps:
+      - name: Check out this branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build the bundled website
+        run: npm run build
+
+      - name: Check TypeScript
+        run: npm exec -- tsc --noEmit
+
+      - name: Generate the iOS project
+        run: npm run ios:add
+
+      - name: Sync the bundled website
+        run: npm run ios:sync
+
+      - name: Build and package the unsigned IPA
+        run: bash scripts/package-ios.sh
+
+      - name: Upload the IPA for Sideloadly
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: traceability-unsigned-ipa
+          path: artifacts/Traceability-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Explain the download
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
+          ### Unsigned IPA ready
+          Download traceability-unsigned-ipa from Artifacts, unzip it, and open the IPA in Sideloadly.
+          This is an iPhone device build. Sideloadly must sign it before installation.
+          SUMMARY

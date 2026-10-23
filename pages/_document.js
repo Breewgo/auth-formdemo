@@ -49,7 +49,17 @@ export default class MyDocument extends Document {
   render() {
     return (
       <Html style={{ height: "100%" }}>
-        <Head />
+        <Head>
+          {/* PWA: install to home screen (manifest and icons from the team's pwa-branch). */}
+          <link rel="manifest" href="/manifest.webmanifest" />
+          <meta name="theme-color" content="#2e7d32" />
+          <meta name="apple-mobile-web-app-capable" content="yes" />
+          <meta name="apple-mobile-web-app-title" content="Traceability" />
+          <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+          <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+          <link rel="shortcut icon" href="/favicon.ico" />
+          <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        </Head>
         <body style={{ height: "100%", overflow: "hidden" }}>
           <Main />
           <NextScript />

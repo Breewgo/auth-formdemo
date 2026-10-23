@@ -2,13 +2,16 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { ActivityIndicator, Text, View } from "react-native";
 import DynamicForm from "../components/DynamicForm";
+import OfflineStatus from "../components/OfflineStatus";
 import RequireRole from "../components/RequireRole";
 import { Button, Card, Choice, ErrorText, Label, Screen, colors, styles } from "../components/ui";
+import { cachedQuery, saveItem } from "../lib/offlineDb";
 import { supabase } from "../lib/supabase";
 import { signOut } from "../lib/useSession";
 
-// Employee home for now: pick an item type → generated form → saved to items.
-// Later, Arnav's scan flow renders <DynamicForm> after a scan instead.
+// Employee home: pick an item type → generated form → saved to items.
+// Works offline: item types and forms come from the IndexedDB cache, and saves
+// go to the IndexedDB outbox until the device is back online.
 function FormDemo({ session, profile }) {
   const router = useRouter();
   const [types, setTypes] = useState(null);
@@ -17,16 +20,17 @@ function FormDemo({ session, profile }) {
   const [lastSaved, setLastSaved] = useState(null);
 
   useEffect(() => {
-    supabase.from("item_types").select("id, name").order("name").then(({ data, error: e }) => {
-      if (e) setError(e.message);
-      else setTypes(data);
-    });
+    cachedQuery("item_types", () => supabase.from("item_types").select("id, name").order("name")).then(
+      ({ data, error: e }) => {
+        if (e) setError(e.message || "Couldn't load item types. Connect once to download them.");
+        else setTypes(data);
+      }
+    );
   }, []);
 
   async function save(payload) {
-    const { error: e } = await supabase.from("items").insert(payload);
-    if (e) throw e;
-    setLastSaved(payload);
+    const status = await saveItem(payload);
+    setLastSaved({ ...payload, status });
   }
 
   async function handleSignOut() {
@@ -40,7 +44,8 @@ function FormDemo({ session, profile }) {
     <Screen
       title="Register Item"
       right={
-        <View style={{ flexDirection: "row", gap: 8 }}>
+        <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <Button title="Scan QR" onPress={() => router.push("/scan")} />
           {profile.role === "admin" && (
             <Button title="Admin" variant="secondary" onPress={() => router.push("/admin")} />
           )}
@@ -48,6 +53,8 @@ function FormDemo({ session, profile }) {
         </View>
       }
     >
+      <OfflineStatus />
+
       <Card>
         <Label>Item type</Label>
         <ErrorText>{error}</ErrorText>
@@ -78,7 +85,11 @@ function FormDemo({ session, profile }) {
 
       {lastSaved && (
         <Card style={{ borderColor: colors.success }}>
-          <Text style={{ color: colors.success, fontWeight: "600" }}>Saved {selected?.name}</Text>
+          <Text style={{ color: colors.success, fontWeight: "600" }}>
+            {lastSaved.status === "queued"
+              ? `Saved ${selected?.name} on this device. It will upload when you're back online.`
+              : `Saved ${selected?.name}`}
+          </Text>
           <Text style={[styles.muted, { fontFamily: "monospace", fontSize: 12, marginTop: 6 }]}>
             {JSON.stringify(lastSaved.data, null, 2)}
           </Text>
